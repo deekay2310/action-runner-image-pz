@@ -10,7 +10,7 @@ source "$HELPER_SCRIPTS"/install.sh
 echo "Installing snapd..."
 if ! rpm -q snapd &>/dev/null; then
     update_dnfpkgs
-    install_dnfpkgs epel-release snapd
+    install_dnfpkgs snapd
 else
     echo "snapd is already installed."
 fi

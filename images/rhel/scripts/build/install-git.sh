@@ -7,9 +7,6 @@
 # shellcheck disable=SC1091
 source "$HELPER_SCRIPTS"/install.sh
 
-# Enable EPEL repository for additional packages
-install_dnfpkgs epel-release
-
 # Install Git
 install_dnfpkgs git
 
