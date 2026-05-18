@@ -95,7 +95,7 @@ get_os_details() {
     local os_options=()
     case "$env" in
         lxd_container|lxd_vm)    os_options=("Ubuntu" "Back");;
-        *)      os_options=("Ubuntu" "CentOS/AlmaLinux" "Back");;
+        *)      os_options=("Ubuntu" "CentOS/AlmaLinux" "RHEL" "Back");;
     esac
 
     local os_choice
@@ -114,6 +114,12 @@ get_os_details() {
             [[ "$version" == "Back" ]] && return 1
             echo "centos $version"
             ;;
+        "RHEL")
+            local version
+            version=$(select_menu "Select RHEL version: " "9" "10" "Back")
+            [[ "$version" == "Back" ]] && return 1
+            echo "rhel $version"
+            ;;
         "Back")
             return 1
             ;;
@@ -124,7 +130,7 @@ get_os_details() {
 get_setup_type() {
     local env="$1" os="$2"
 
-    if [[ "$os" == "centos" || "$env" == "docker" || "$env" == "podman" ]]; then
+    if [[ "$os" == "centos" || "$os" == "rhel" || "$env" == "docker" || "$env" == "podman" ]]; then
         echo "minimal" # These combinations only support minimal setup
         return
     fi

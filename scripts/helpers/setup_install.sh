@@ -27,19 +27,19 @@ if [[ "$IMAGE_OS" == *"ubuntu"* ]]; then
     run_script "${INSTALLER_SCRIPT_FOLDER}/install-apt-common.sh" "DEBIAN_FRONTEND" "HELPER_SCRIPTS" "INSTALLER_SCRIPT_FOLDER" "ARCH"
 
     run_script "${INSTALLER_SCRIPT_FOLDER}/configure-dpkg.sh" "DEBIAN_FRONTEND" "HELPER_SCRIPTS" "INSTALLER_SCRIPT_FOLDER" "ARCH"
-elif [[ "$IMAGE_OS" == *"centos"* ]]; then
-    # Add apt wrapper to implement retries
+elif [[ "$IMAGE_OS" == *"centos"* || "$IMAGE_OS" == *"rhel"* ]]; then
+    # Add yum/dnf wrapper to implement retries
     run_script "${INSTALLER_SCRIPT_FOLDER}/configure-yum-mock.sh"
-    echo "Setting user ubuntu with sudo privileges"
+    echo "Setting user with sudo privileges"
 
-    # Install Configure apt
+    # Configure dnf
     run_script "${INSTALLER_SCRIPT_FOLDER}/configure-dnf.sh" "DEBIAN_FRONTEND" "HELPER_SCRIPTS"
 
     run_script "${INSTALLER_SCRIPT_FOLDER}/install-dnf-vital.sh" "DEBIAN_FRONTEND" "HELPER_SCRIPTS" "INSTALLER_SCRIPT_FOLDER" "ARCH"
 
     run_script "${INSTALLER_SCRIPT_FOLDER}/install-dnf-common.sh" "DEBIAN_FRONTEND" "HELPER_SCRIPTS" "INSTALLER_SCRIPT_FOLDER" "ARCH"
 
-    run_script "${INSTALLER_SCRIPT_FOLDER}/configure-dnfpkg.sh" "DEBIAN_FRONTEND" "HELPER_SCRIPTS" "INSTALLER_SCRIPT_FOLDER" "ARCH" 
+    run_script "${INSTALLER_SCRIPT_FOLDER}/configure-dnfpkg.sh" "DEBIAN_FRONTEND" "HELPER_SCRIPTS" "INSTALLER_SCRIPT_FOLDER" "ARCH"
 
 fi
 
