@@ -1,0 +1,135 @@
+#!/bin/bash -e
+################################################################################
+##  File:  install-docker.sh
+##  Desc:  Install docker onto the image
+##  Supply chain security: amazon-ecr-credential-helper - dynamic checksum validation
+################################################################################
+# Source the helpers for use with the script
+# shellcheck disable=SC1091
+source "$HELPER_SCRIPTS"/install.sh
+# shellcheck disable=SC2086
+source $HELPER_SCRIPTS/os.sh
+
+# Set architecture-specific variables using a case statement for clarity
+case "$ARCH" in
+    "x86_64")
+        package_arch="amd64"
+        ;;
+    *)
+        package_arch="$ARCH"
+        ;;
+esac
+
+os_codename=$(. /etc/os-release && echo "$VERSION_ID")
+dnf -y install dnf-plugins-core
+dnf config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
+
+# Install docker components via dnf
+# Using toolsets keep installation order to install dependencies before the package in order to control versions
+
+components=$(get_toolset_value '.docker.components[] .package')
+for package in $components; do
+    version=$(get_toolset_value ".docker.components[] | select(.package == \"$package\") | .version")
+    if [[ $version == "latest" ]]; then
+        install_dnfpkgs --setopt=install_weak_deps=False "$package"
+    else
+        version_string=$(dnf --showduplicates list "$package" | awk '{ print $2 }' | grep "$version" | grep "$os_codename" | head -1)
+        install_dnfpkgs --setopt=install_weak_deps=False "${package}=${version_string}"
+    fi
+done
+
+# Install plugins that are best installed from the GitHub repository
+# Be aware that `url` built from github repo name and plugin name because of current repo naming for those plugins
+
+plugins=$(get_toolset_value '.docker.plugins[] .plugin')
+for plugin in $plugins; do
+    version=$(get_toolset_value ".docker.plugins[] | select(.plugin == \"$plugin\") | .version")
+    filter=$(get_toolset_value ".docker.plugins[] | select(.plugin == \"$plugin\") | .asset_map[\"$ARCH\"]")
+    url=$(resolve_github_release_asset_url "docker/$plugin" "endswith(\"$filter\")" "$version")
+    binary_path=$(download_with_retry "$url" "/tmp/docker-$plugin")
+    mkdir -pv "/usr/libexec/docker/cli-plugins"
+    install "$binary_path" "/usr/libexec/docker/cli-plugins/docker-$plugin"
+done
+
+# docker from official repo introduced different GID generation: https://github.com/actions/runner-images/issues/8157
+gid=$(cut -d ":" -f 3 /etc/group | grep "^1..$" | sort -n | tail -n 1 | awk '{ print $1+1 }')
+groupmod -g "$gid" docker
+
+[ -f /usr/share/bash-completion/completions/docker ] && \
+    cp -f /usr/share/bash-completion/completions/docker /etc/bash_completion.d/
+
+[ ! -d /etc/docker ] && mkdir /etc/docker
+cat << EOF > /etc/docker/daemon.json
+{
+  "data-root": "/var/lib/docker",
+  "log-driver": "local",
+  "log-opts": {
+    "max-size": "100m",
+    "max-file": "6",
+    "compress": "true",
+    "mode": "non-blocking",
+    "max-buffer-size": "4m"
+  },
+  "default-ulimits": {
+    "nofile": {
+      "Name": "nofile",
+      "Hard": 65536,
+      "Soft": 65536
+    },
+    "nproc": {
+      "Name": "nproc",
+      "Hard": 65536,
+      "Soft": 65536
+    }
+  },
+  "live-restore": true,
+  "max-concurrent-downloads": 20,
+  "max-concurrent-uploads": 10,
+  "storage-driver": "overlay2",
+  "exec-opts": [
+    "native.cgroupdriver=systemd"
+  ]
+}
+EOF
+
+# Create systemd-tmpfiles configuration for Docker
+cat <<EOF | sudo tee /etc/tmpfiles.d/docker.conf
+L /run/docker.sock - - - - root docker 0770
+EOF
+
+# Reload systemd-tmpfiles to apply the new configuration
+systemd-tmpfiles --create /etc/tmpfiles.d/docker.conf
+
+# Enable docker.service
+systemctl is-active --quiet docker.service || systemctl start docker.service
+systemctl is-enabled --quiet docker.service || systemctl enable docker.service
+
+# Docker daemon takes time to come up after installing
+sleep 10
+docker info
+
+if [[ "$ARCH" != "ppc64le" && "$ARCH" != "s390x" ]]; then 
+    if ! is_rhel9; then
+        # Pull Dependabot docker image
+        docker pull ghcr.io/dependabot/dependabot-updater-core:latest
+
+        # Pull AW docker images
+        docker pull ghcr.io/github/gh-aw-mcpg:latest
+        docker pull ghcr.io/github/gh-aw-firewall/agent:latest
+        docker pull ghcr.io/github/gh-aw-firewall/api-proxy:latest
+        docker pull ghcr.io/github/gh-aw-firewall/squid:latest
+        docker pull ghcr.io/github/github-mcp-server:latest
+    fi
+
+    # Download amazon-ecr-credential-helper
+    aws_latest_release_url="https://api.github.com/repos/awslabs/amazon-ecr-credential-helper/releases/latest"
+    aws_helper_url=$(curl -fsSL ${GITHUB_TOKEN:+-H "Authorization: Bearer ${GITHUB_TOKEN}"} "${aws_latest_release_url}" | jq -r '.body' | awk -v arch="$package_arch" -F'[()]' '$0 ~ "linux-" arch {print $2}')
+    aws_helper_binary_path=$(download_with_retry "$aws_helper_url")
+
+    # Supply chain security - amazon-ecr-credential-helper
+    aws_helper_external_hash=$(get_checksum_from_url "${aws_helper_url}.sha256" "docker-credential-ecr-login" "SHA256")
+    use_checksum_comparison "$aws_helper_binary_path" "$aws_helper_external_hash"
+
+    # Install amazon-ecr-credential-helper
+    install "$aws_helper_binary_path" "/usr/bin/docker-credential-ecr-login"
+fi
