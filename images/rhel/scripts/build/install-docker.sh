@@ -23,6 +23,9 @@ esac
 os_codename=$(. /etc/os-release && echo "$VERSION_ID")
 dnf -y install dnf-plugins-core
 
+# Remove any stale docker-ce.repo from a previous build run
+rm -f /etc/yum.repos.d/docker-ce.repo
+
 # Docker does not publish RHEL packages for ppc64le; use the CentOS repo instead
 # (CentOS 9 and RHEL 9 are binary-compatible)
 if [[ "$ARCH" == "ppc64le" ]]; then

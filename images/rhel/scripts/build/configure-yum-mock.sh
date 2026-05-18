@@ -33,7 +33,7 @@ while [ \$i -le \$max_retries ];do
     retry=true
   elif grep -q 'Package is being held by another process' \$err;then
     retry=true
-  elif grep -q 'Failed to download metadata' \$err;then
+  elif grep -q 'Failed to download metadata' \$err && ! grep -q 'Status code: 404' \$err;then
     retry=true
   fi
 
