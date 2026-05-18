@@ -124,7 +124,11 @@ fi
 # Define Dependent Variables ---
 # shellcheck disable=SC2001
 # shellcheck disable=SC2034
-toolset_file_name="toolset-$(echo "$IMAGE_VERSION" | sed 's/\.//g').json"
+if [[ "$IMAGE_OS" == "rhel" || "$IMAGE_OS" == "centos" ]]; then
+    toolset_file_name="toolset-${IMAGE_VERSION%%.*}.json"
+else
+    toolset_file_name="toolset-$(echo "$IMAGE_VERSION" | sed 's/\.//g').json"
+fi
 image_folder="/var/tmp/imagegeneration-${IMAGE_OS}-${IMAGE_VERSION}"
 helper_script_folder="${image_folder}/helpers"
 installer_script_folder="${image_folder}/installers"

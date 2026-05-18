@@ -1,0 +1,60 @@
+#!/bin/bash -e
+################################################################################
+##  File:  configure-image-data.sh
+##  Desc:  Create a file with image data and documentation links
+################################################################################
+# shellcheck disable=SC2153
+imagedata_file="$IMAGEDATA_FILE"
+image_version="$IMAGE_VERSION"
+image_version_major=${image_version/.*/} # Extract the major version
+image_version_minor=$(echo "$image_version" | cut -d "." -f 2) # Extract the minor version
+
+# Determine OS name and version for CentOS
+# shellcheck disable=SC2002
+os_name=$(cat /etc/redhat-release | sed "s/ /\\\n/g") # Get OS name
+# shellcheck disable=SC1083
+os_version=$(rpm -E %{rhel}) # Get CentOS version
+image_label="centos-${os_version}" # Set image label
+
+REPO_OWNER="IBM"
+REPO_NAME="action-runner-image-pz"
+BRANCH="main"
+
+api_release_response=$(curl -s ${GITHUB_TOKEN:+-H "Authorization: Bearer ${GITHUB_TOKEN}"} "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/latest")
+git_tag=$(echo "$api_release_response" | jq -r .tag_name)
+
+build_sha=$(curl -s ${GITHUB_TOKEN:+-H "Authorization: Bearer ${GITHUB_TOKEN}"} "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/commits/${BRANCH}" | jq -r .sha)
+
+github_url="https://github.com/${REPO_OWNER}/${REPO_NAME}/blob/${BRANCH}/images"
+software_url="${github_url}/centos/toolsets/toolset-${image_version_major}${image_version_minor}.json"
+
+if [ "$git_tag" != "null" ] && [ -n "$git_tag" ]; then
+    echo "Release found: ${git_tag}"
+    tag_slug=${git_tag//\//%2F} # URL encode slashes
+    releaseUrl="https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/tag/${tag_slug}"
+else
+    echo "Warning: No release found. Falling back to commit SHA: ${build_sha}"
+    releaseUrl="https://github.com/${REPO_OWNER}/${REPO_NAME}/tree/${build_sha}"
+fi
+
+runner_image_version="$(date  +%Y%m%d)"
+image_build_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+image_builder_id=$(cat /etc/machine-id 2>/dev/null || hostname -s 2>/dev/null)
+
+# Create the image data JSON file
+cat <<EOF > "$imagedata_file"
+[
+  {
+    "group": "Runner Image Provisioner",
+    "detail": "Commit: ${build_sha}\nBuild Date: ${image_build_date}\nBuilder ID: ${image_builder_id}"
+  },
+  {
+    "group": "Operating System",
+    "detail": "${os_name}"
+  },
+  {
+    "group": "Runner Image",
+    "detail": "Image: ${image_label}\nVersion: ${runner_image_version}\nIncluded Software: ${software_url}\nImage Release: ${releaseUrl}"
+  }
+]
+EOF

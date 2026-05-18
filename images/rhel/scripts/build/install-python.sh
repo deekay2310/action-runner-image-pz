@@ -1,0 +1,40 @@
+#!/bin/bash -e
+################################################################################
+##  File:  install-python.sh
+##  Desc:  Install Python 3
+################################################################################
+
+set -e
+# Source the helpers for use with the script
+# shellcheck disable=SC1091
+source "$HELPER_SCRIPTS"/etc-environment.sh
+# shellcheck disable=SC1091
+source "$HELPER_SCRIPTS"/os.sh
+# shellcheck disable=SC1091
+source "$HELPER_SCRIPTS"/install.sh
+
+# Install Python, Python 3, pip
+install_dnfpkgs --setopt=install_weak_deps=False python3 python3-devel python3-pip
+
+# Install pipx
+# Set pipx custom directory
+export PIPX_BIN_DIR=/opt/pipx_bin
+export PIPX_HOME=/opt/pipx
+
+python3 -m pip install pipx
+python3 -m pipx ensurepath
+
+# Update /etc/environment
+set_etc_environment_variable "PIPX_BIN_DIR" $PIPX_BIN_DIR
+set_etc_environment_variable "PIPX_HOME" $PIPX_HOME
+prepend_etc_environment_path $PIPX_BIN_DIR
+
+# Test pipx
+if ! command -v pipx; then
+    echo "pipx was not installed or not found on PATH"
+    exit 1
+fi
+
+# Adding this dir to PATH will make installed pip commands are immediately available.
+# shellcheck disable=SC2016
+prepend_etc_environment_path '$HOME/.local/bin'
