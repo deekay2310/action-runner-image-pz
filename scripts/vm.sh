@@ -47,6 +47,12 @@ sudo bash -c 'exec "$@"' _ "${HELPER_SCRIPTS}/setup_install.sh" "${clean_args[@]
 
 sudo bash -c 'id -u runner >/dev/null 2>&1 || (useradd -c "Action Runner" -m -s /bin/bash runner && usermod -L runner && echo "runner ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/runner && chmod 440 /etc/sudoers.d/runner)'
 
-sudo bash -c "usermod -aG adm,users,systemd-journal,docker,lxd runner"
+groups_to_add=""
+for g in adm users systemd-journal docker lxd; do
+    getent group "$g" >/dev/null 2>&1 && groups_to_add="${groups_to_add:+$groups_to_add,}$g"
+done
+if [ -n "$groups_to_add" ]; then
+    sudo usermod -aG "$groups_to_add" runner
+fi
 
 sudo su -c "find /opt/post-generation -mindepth 1 -maxdepth 1 -type f -name '*.sh' -exec bash {} \;"
