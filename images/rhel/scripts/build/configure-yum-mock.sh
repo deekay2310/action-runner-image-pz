@@ -11,40 +11,44 @@ for real_tool in /usr/bin/yum /usr/bin/dnf; do
     cat >$prefix/"$tool" <<EOT
 #!/bin/sh
 
+max_retries=30
 i=1
-while [ \$i -le 30 ];do
+while [ \$i -le \$max_retries ];do
   err=\$(mktemp)
   $real_tool "\$@" 2>\$err
+  rc=\$?
 
-  # no errors, break the loop and continue normal flow
-  test -f \$err || break
+  if [ \$rc -eq 0 ]; then
+    rm -f \$err
+    exit 0
+  fi
+
   cat \$err >&2
 
   retry=false
 
   if grep -q 'Could not get lock' \$err;then
-    # DNF/YUM db locked needs retry
-    retry=true
-  elif grep -q 'Failed to download metadata' \$err;then
-    # Repository metadata issue, needs retry
     retry=true
   elif grep -q 'Temporary failure in name resolution' \$err;then
-    # DNS resolution issue
     retry=true
   elif grep -q 'Package is being held by another process' \$err;then
-    # DNF/YUM process is busy by another process
+    retry=true
+  elif grep -q 'Failed to download metadata' \$err;then
     retry=true
   fi
 
-  rm \$err
+  rm -f \$err
   if [ \$retry = false ]; then
-    break
+    exit \$rc
   fi
 
   sleep 5
-  echo "...retry \$i"
+  echo "...retry \$i/\$max_retries"
   i=\$((i + 1))
 done
+
+echo "ERROR: Exhausted \$max_retries retries, giving up."
+exit \$rc
 EOT
     chmod +x $prefix/"$tool"
 done

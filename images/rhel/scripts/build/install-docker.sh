@@ -22,7 +22,14 @@ esac
 
 os_codename=$(. /etc/os-release && echo "$VERSION_ID")
 dnf -y install dnf-plugins-core
-dnf config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
+
+# Docker does not publish RHEL packages for ppc64le; use the CentOS repo instead
+# (CentOS 9 and RHEL 9 are binary-compatible)
+if [[ "$ARCH" == "ppc64le" ]]; then
+    dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+else
+    dnf config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
+fi
 
 # Install docker components via dnf
 # Using toolsets keep installation order to install dependencies before the package in order to control versions
