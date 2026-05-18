@@ -21,6 +21,7 @@ case "$ARCH" in
 esac
 
 os_codename=$(. /etc/os-release && echo "$VERSION_ID")
+os_major="${os_codename%%.*}"
 dnf -y install dnf-plugins-core
 
 # Remove any stale docker-ce.repo from a previous build run
@@ -43,8 +44,13 @@ for package in $components; do
     if [[ $version == "latest" ]]; then
         install_dnfpkgs --setopt=install_weak_deps=False "$package"
     else
-        version_string=$(dnf --showduplicates list "$package" | awk '{ print $2 }' | grep "$version" | grep "$os_codename" | head -1)
-        install_dnfpkgs --setopt=install_weak_deps=False "${package}=${version_string}"
+        version_string=$(dnf --showduplicates list "$package" | awk '{ print $2 }' | grep "$version" | grep "el${os_major}" | head -1)
+        if [[ -z "$version_string" ]]; then
+            echo "WARNING: version $version not found for $package, installing latest available"
+            install_dnfpkgs --setopt=install_weak_deps=False "$package"
+        else
+            install_dnfpkgs --setopt=install_weak_deps=False "${package}-${version_string}"
+        fi
     fi
 done
 
