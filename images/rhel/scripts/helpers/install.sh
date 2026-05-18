@@ -234,7 +234,11 @@ use_checksum_comparison() {
         exit 1
     fi
 
-    local_file_hash=$(shasum --algorithm "$sha_type" "$file_path" | awk '{print $1}')
+    if command -v shasum &>/dev/null; then
+        local_file_hash=$(shasum --algorithm "$sha_type" "$file_path" | awk '{print $1}')
+    else
+        local_file_hash=$(sha256sum "$file_path" | awk '{print $1}')
+    fi
 
     if [[ "$local_file_hash" != "$checksum" ]]; then
         echo "Checksum verification failed. Expected hash: $checksum; Actual hash: $local_file_hash."

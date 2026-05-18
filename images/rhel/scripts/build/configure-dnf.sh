@@ -33,12 +33,3 @@ install_dnfpkgs jq
 
 # Optional: Configure parallel downloads to speed up package installation
 echo "max_parallel_downloads=10" >> /etc/dnf/dnf.conf
-
-# Enable EPEL repository (required for packages like parallel, patchelf, shellcheck, etc.)
-install_dnfpkgs epel-release
-
-# Enable CRB (CodeReady Builder) repo — some EPEL packages depend on it
-dnf config-manager --set-enabled crb || true
-
-# Refresh metadata so EPEL/CRB packages are available for subsequent installs
-dnf makecache
