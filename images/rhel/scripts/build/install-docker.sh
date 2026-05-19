@@ -109,7 +109,7 @@ cat << EOF > /etc/docker/daemon.json
 EOF
 
 # Create systemd-tmpfiles configuration for Docker
-cat <<EOF | sudo tee /etc/tmpfiles.d/docker.conf
+cat <<EOF | tee /etc/tmpfiles.d/docker.conf
 L /run/docker.sock - - - - root docker 0770
 EOF
 

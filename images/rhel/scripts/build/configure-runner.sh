@@ -67,16 +67,16 @@ build_runner() {
 
 install_runner() {
     header "Installing runner"
-    sudo mkdir -p /opt/runner-cache
-    sudo tar -xf /tmp/runner/_package/*.tar.gz -C /opt/runner-cache
+    mkdir -p /opt/runner-cache
+    tar -xf /tmp/runner/_package/*.tar.gz -C /opt/runner-cache
 }
 
 pre_cleanup() {
-    sudo rm -rf /tmp/runner /opt/runner-cache
+    rm -rf /tmp/runner /opt/runner-cache
 }
 
 post_cleanup() {
-    sudo rm -rf "${IMAGE_FOLDER}"/runner-sdk-8.patch \
+    rm -rf "${IMAGE_FOLDER}"/runner-sdk-8.patch \
            /tmp/preseed-yaml /home/ubuntu/.nuget \
            /home/runner/.local/share
 }

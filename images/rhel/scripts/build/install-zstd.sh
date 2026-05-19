@@ -29,12 +29,12 @@ make -C "/tmp/${release_name}" zstd-release
 
 # Copy binaries
 for copyprocess in zstd zstdless zstdgrep; do
-    sudo cp "/tmp/${release_name}/programs/${copyprocess}" /usr/local/bin/
+    cp "/tmp/${release_name}/programs/${copyprocess}" /usr/local/bin/
 done
 
-sudo cp "/tmp/${release_name}/contrib/pzstd/pzstd" /usr/local/bin/
+cp "/tmp/${release_name}/contrib/pzstd/pzstd" /usr/local/bin/
 
 # Create symlinks
 for symlink in zstdcat zstdmt unzstd; do
-    sudo ln -sf /usr/local/bin/zstd /usr/local/bin/${symlink}
+    ln -sf /usr/local/bin/zstd /usr/local/bin/${symlink}
 done

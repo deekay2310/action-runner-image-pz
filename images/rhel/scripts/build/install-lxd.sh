@@ -16,16 +16,16 @@ fi
 
 # Install 5.21 LTS LXD version using snap
 echo "Installing LXD version ${LATEST_LTS_CHANNEL} using snap..."
-sudo snap install lxd --channel="${LATEST_LTS_CHANNEL}/stable"
+snap install lxd --channel="${LATEST_LTS_CHANNEL}/stable"
 
 echo "Checking list of refreshable snaps..."
-sudo snap refresh --list
+snap refresh --list
 
 echo "Checking the status of snap.lxd.daemon..."
 ensure_service_is_active snap.lxd.daemon
 
 # Hold the autorefresh for LXD as it can cause unwanted service-disruptions 
-sudo snap refresh --hold lxd
+snap refresh --hold lxd
 
 # Detect Environment (Host vs Container)
 # We default to 'host'
@@ -56,7 +56,7 @@ echo "Initializing LXD with preseed configuration..."
 
 if [[ -f "$CONFIG_PATH" ]]; then
     # shellcheck disable=SC2002
-    cat "$CONFIG_PATH" | sudo /snap/bin/lxd init --preseed
+    cat "$CONFIG_PATH" | /snap/bin/lxd init --preseed
     
     # Check if the command succeeded
     # shellcheck disable=SC2181
@@ -69,7 +69,7 @@ if [[ -f "$CONFIG_PATH" ]]; then
 else
     echo "Warning: $CONFIG_FILENAME not found at $INSTALLER_SCRIPT_FOLDER."
     echo "Falling back to default auto initialization..."
-    sudo /snap/bin/lxd init --auto
+    /snap/bin/lxd init --auto
 fi
 
 echo "LXD installation and initialization are complete!"
