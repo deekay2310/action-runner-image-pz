@@ -2,6 +2,8 @@
 set -e  # Exit on any error
 set -o pipefail  # Fail if any command in a pipeline fails
 
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH}"
+
 CURRENT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 
 # shellcheck disable=SC1091
