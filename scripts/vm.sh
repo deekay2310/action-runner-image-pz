@@ -47,7 +47,12 @@ chmod -R 0755 /etc/systemd/system/gha-runner.service
 # shellcheck disable=SC2154
 sudo bash -c 'exec "$@"' _ "${HELPER_SCRIPTS}/setup_install.sh" "${clean_args[@]}" "${forward_args[@]}"
 
-sudo bash -c 'id -u runner >/dev/null 2>&1 || (useradd -c "Action Runner" -m -s /bin/bash runner && usermod -L runner && echo "runner ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/runner && chmod 440 /etc/sudoers.d/runner)'
+if ! id -u runner >/dev/null 2>&1; then
+    sudo useradd -c "Action Runner" -m -s /bin/bash runner
+    sudo usermod -L runner
+    echo 'runner ALL=(ALL) NOPASSWD: ALL' | sudo tee /etc/sudoers.d/runner > /dev/null
+    sudo chmod 440 /etc/sudoers.d/runner
+fi
 
 groups_to_add=""
 for g in adm users systemd-journal docker lxd; do
