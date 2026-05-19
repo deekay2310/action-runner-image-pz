@@ -8,8 +8,7 @@
 # shellcheck disable=SC1091
 source "$HELPER_SCRIPTS"/install.sh
 
-SRC=$(readlink -f "${BASH_SOURCE[0]}")
-DIR=$(dirname "${SRC}")
+DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 # Set architecture-specific variables using a case statement for clarity
 case "$ARCH" in
