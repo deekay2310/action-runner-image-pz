@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e  # Exit on any error
 
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH}"
+
 HELPERS_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/helpers"
 
 # shellcheck disable=SC1091
