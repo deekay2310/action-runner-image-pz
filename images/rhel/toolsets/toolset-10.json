@@ -114,6 +114,7 @@
             "curl",
             "gcc-c++",
             "gcc",
+            "gzip",
             "make",
             "jq",
             "tar",
