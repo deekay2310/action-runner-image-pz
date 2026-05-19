@@ -22,10 +22,19 @@ chmod -R 777 /usr/share
 
 chmod 755 "$IMAGE_FOLDER"
 
-# Remove quotes around PATH in /etc/environment
+# Remove quotes around PATH in /etc/environment and ensure system directories are present
 ENVPATH=$(grep 'PATH=' /etc/environment | head -n 1 | sed -z 's/^PATH=*//')
 ENVPATH=${ENVPATH#"\""}
 ENVPATH=${ENVPATH%"\""}
+
+# Append standard system directories so that login shells via PAM (e.g. sudo su -c)
+# can find basic commands like find, grep, etc.
+for dir in /usr/local/sbin /usr/local/bin /usr/sbin /usr/bin /sbin /bin; do
+    if [[ ":${ENVPATH}:" != *":${dir}:"* ]]; then
+        ENVPATH="${ENVPATH}:${dir}"
+    fi
+done
+
 replace_etc_environment_variable "PATH" "${ENVPATH}"
 echo "Updated /etc/environment: $(cat /etc/environment)"
 
