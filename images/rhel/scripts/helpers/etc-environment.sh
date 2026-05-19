@@ -4,6 +4,12 @@
 ##  Desc:  Helper functions for source and modify /etc/environment
 ################################################################################
 
+# Ensure standard directories are in PATH (sudo bash -c strips inherited PATH)
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH}"
+
+# Ensure /etc/environment exists (RHEL doesn't always create it by default)
+touch /etc/environment
+
 # NB: sed expression use '%' as a delimiter in order to simplify handling
 #     values containing slashes (i.e. directory path)
 #     The values containing '%' will break the functions
@@ -19,7 +25,7 @@ add_etc_environment_variable() {
     local variable_name=$1
     local variable_value=$2
 
-    echo "${variable_name}=${variable_value}" | sudo tee -a /etc/environment
+    echo "${variable_name}=${variable_value}" | tee -a /etc/environment
 }
 
 replace_etc_environment_variable() {
@@ -27,7 +33,7 @@ replace_etc_environment_variable() {
     local variable_value=$2
 
     # modify /etc/environemnt in place by replacing a string that begins with variable_name
-    sudo sed -i -e "s%^${variable_name}=.*$%${variable_name}=${variable_value}%" /etc/environment
+    sed -i -e "s%^${variable_name}=.*$%${variable_name}=${variable_value}%" /etc/environment
 }
 
 set_etc_environment_variable() {

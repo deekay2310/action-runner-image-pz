@@ -164,7 +164,7 @@ get_checksum_from_github_release() {
         exit 1
     fi
 
-    hash=$(echo "$matched_line" | grep -oP "$hash_pattern")
+    hash=$(echo "$matched_line" | grep -oE "$hash_pattern")
 
     if [[ -z "$hash" ]]; then
         echo "Found ${file_name} in body of release, but failed to get hash from it: ${matched_line}" >&2
@@ -211,7 +211,7 @@ get_checksum_from_url() {
     if [[ $use_custom_search_pattern == "true" ]]; then
         hash=$(echo "$matched_line" | sed 's/  */ /g' | cut -d "$delimiter" -f "$word_number" | tr -d -c '[:alnum:]')
     else
-        hash=$(echo "$matched_line" | grep -oP "$hash_pattern")
+        hash=$(echo "$matched_line" | grep -oE "$hash_pattern")
     fi
 
     if [[ -z "$hash" ]]; then

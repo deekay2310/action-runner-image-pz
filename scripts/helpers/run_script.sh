@@ -10,6 +10,10 @@ run_script() {
     local env_vars=()
     local env_vars_display=()
 
+    # Always pass through PATH so child scripts can find basic commands
+    env_vars+=("PATH=${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}")
+    env_vars_display+=("PATH=...")
+
     # Always include GITHUB_TOKEN if it's set in the environment
     if [[ -n "${GITHUB_TOKEN}" ]]; then
         env_vars+=("GITHUB_TOKEN=${GITHUB_TOKEN}")
