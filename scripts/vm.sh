@@ -62,4 +62,8 @@ if [ -n "$groups_to_add" ]; then
     sudo usermod -aG "$groups_to_add" runner
 fi
 
+if [[ "$IMAGE_OS" == "rhel" ]]; then
+    sudo sed -i "s/^User=ubuntu/User=runner/" /etc/systemd/system/gha-runner.service
+fi
+
 sudo su -c "find /opt/post-generation -mindepth 1 -maxdepth 1 -type f -name '*.sh' -exec bash {} \;"
